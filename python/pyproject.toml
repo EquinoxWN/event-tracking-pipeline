@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "event-tracking-pipeline"
+version = "0.1.0"
+description = "Product analytics you can trust: a tiny JS tracker, a collector that validates every event, and clean sessionized tables, with no third-party SDK."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = ["jsonschema>=4.23,<5"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11", "types-jsonschema>=4.23", "pip-audit>=2.7"]
+
+[project.scripts]
+etp-collector = "event_tracking_pipeline.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+event_tracking_pipeline = ["py.typed", "schemas/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["tests", "../scripts"]
+
+[tool.mypy]
+strict = true
+files = ["src", "tests", "../scripts"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+# Bugs, security (bandit), modern syntax, imports, naming and test style; `ruff format` owns line length.
+select = ["E", "W", "F", "I", "B", "UP", "S", "SIM", "RUF", "N", "C4", "PT", "RET", "PIE", "PERF", "BLE"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests use assert on purpose and start the local node script with a fixed argument list.
+"tests/**" = ["S101", "S603"]
