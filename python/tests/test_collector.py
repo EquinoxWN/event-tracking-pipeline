@@ -99,7 +99,7 @@ def test_unparseable_body_is_dead_lettered(
         (b"[]", "body must be a JSON object"),
         (b'{"events": []}', "events must be a non-empty array"),
         (b'{"events": {}}', "events must be a non-empty array"),
-        (b'{"events": [{}], "extra": 1}', "unknown envelope fields: extra"),
+        (b'{"events": [{}], "extra": 1}', 'unknown envelope fields: "extra"'),
         (b'{"events": [{}], "sent_at": "yesterday"}', "sent_at must be an RFC 3339 UTC timestamp"),
         (b'{"events": [{}], "sent_at": 5}', "sent_at must be an RFC 3339 UTC timestamp"),
     ],

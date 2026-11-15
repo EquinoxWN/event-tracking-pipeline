@@ -14,6 +14,7 @@ from .collector import Collector
 from .schema import EventValidator
 from .server import build_server
 from .store import EventStore
+from .text import printable
 
 MAX_FILE_BYTES = 10_000_000
 
@@ -84,14 +85,14 @@ def _report(args: argparse.Namespace) -> int:
     try:
         print(f"events stored: {store.count_events()}")
         for name, count in store.events_by_name():
-            print(f"  {name}: {count}")
+            print(f"  {printable(name, 128)}: {count}")
         summary = store.dead_letter_summary()
         print(f"dead letters: {sum(n for _, n, _ in summary)} rows")
         for reason, rows, seen in summary:
-            print(f"  {reason}: {rows} rows, seen {seen} times")
+            print(f"  {printable(reason, 64)}: {rows} rows, seen {seen} times")
         if summary:
             for reason, detail, seen in store.dead_letters(args.recent):
-                print(f"  - [{reason}] x{seen} {detail[:150]}")
+                print(f"  - [{printable(reason, 64)}] x{seen} {printable(detail, 150)}")
     finally:
         store.close()
     return 0
@@ -115,7 +116,7 @@ def _validate(args: argparse.Namespace) -> int:
     for i, event in enumerate(events):
         problems = validator.problems(event)
         bad += bool(problems)
-        status = "ok" if not problems else "; ".join(str(p) for p in problems)
+        status = "ok" if not problems else printable("; ".join(str(p) for p in problems))
         print(f"event {i}: {status}")
     print(f"{len(events) - bad} valid, {bad} invalid")
     return 1 if bad else 0

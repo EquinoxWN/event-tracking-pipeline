@@ -9,7 +9,7 @@ Part of my **Data Engineering** list · Python · JS · core project
 
 ## Proof it works
 
-115 Python and 64 JavaScript tests pass, and the dependency audits are clean:
+136 Python and 64 JavaScript tests pass, and the dependency audits are clean:
 
 ![pytest and node --test](docs/proof/tests.jpg)
 
@@ -145,7 +145,7 @@ Latest local run (full detail in [docs/results/m1.md](docs/results/m1.md)):
 
 | Check | Result |
 |---|---|
-| pytest | 115 passed |
+| pytest | 136 passed |
 | node --test | 64 passed, 0 failed |
 | End to end, 200 events | 200 sent in 21 requests (one retry after a simulated drop); 201 stored, 4 dead letters, as expected |
 | Replay of a delivered batch | `accepted 0, duplicates 10` |
@@ -159,6 +159,7 @@ Latest local run (full detail in [docs/results/m1.md](docs/results/m1.md)):
 | `python/tests/test_collector.py` | 36 | Good events stored, bad ones dead-lettered; HTTP 400/404/405/411/413/415/503; CORS only for allowed origins |
 | `python/tests/test_server.py` | 4 | Real HTTP on 127.0.0.1; 6 concurrent clients with overlapping retries store exactly 120 events |
 | `python/tests/test_cli.py` | 14 | `validate`, `report`, environment defaults, bad arguments |
+| `python/tests/test_escaping.py` | 21 | ANSI escapes, newlines, bidi and NUL characters and very long keys never reach problem messages or terminal output raw |
 | `python/tests/test_e2e_node.py` | 1 | The JS tracker delivers to the collector with exact counts |
 | `js/test/tracker.test.js` | 41 | Event shape, batching, consent, GPC, offline, retry and backoff, 4xx, attempt limit, reload, in-flight races, invalid calls |
 | `js/test/queue.test.js` | 15 | Bounded queue, removal by id, attempt counts, persistence, corrupt storage |
@@ -166,10 +167,11 @@ Latest local run (full detail in [docs/results/m1.md](docs/results/m1.md)):
 | `js/test/transport.test.js` | 4 | Request shape, timeout, network errors, bad endpoints |
 
 What the numbers show: across an offline start and a network drop the tracker lost nothing, and
-every event the collector received is either stored or dead-lettered with a reason. Two defects found
-while writing the tests were fixed (lone surrogates crashed the SQLite insert; the identify rule fired
-on events without a `type`). CI has not run yet (not pushed), and no browser was used: the tracker is
-tested in Node.js. Quality check against the 10 rules, with 15 hand mutations, all killed:
+every event the collector received is either stored or dead-lettered with a reason. Three defects found
+while writing and reviewing the tests were fixed (lone surrogates crashed the SQLite insert; the
+identify rule fired on events without a `type`; client-sent envelope keys reached error messages and
+the `report` output unescaped, so ANSI escape sequences could reach an operator's terminal). CI has not run yet (not pushed), and no browser was used: the tracker is
+tested in Node.js. Quality check against the 10 rules, with 23 hand mutations (21 killed, 2 shown equivalent):
 [docs/quality/2026-11-01.md](docs/quality/2026-11-01.md).
 
 ## Roadmap
@@ -232,6 +234,7 @@ nothing is sent to any analytics service, and the end-to-end script only accepts
 - Every GitHub Action is pinned to a commit SHA; workflows run read-only, without persisted credentials.
 - Dependabot update pull requests are paused (`open-pull-requests-limit: 0`) so the repository keeps a single `main` branch; dependencies are updated by hand and checked by the CI audit.
 - The collector binds to 127.0.0.1 by default, caps bodies and batches, and sends CORS headers only to configured origins.
+- Untrusted text (envelope keys, property names, stored dead-letter details) is JSON-quoted or escaped and length-capped before it goes into a message or is printed.
 - Report vulnerabilities privately: see [SECURITY.md](SECURITY.md). To contribute, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License

@@ -13,6 +13,7 @@ from typing import Any
 
 from .schema import EventValidator
 from .store import DeadLetter, EventStore
+from .text import printable, quote_list
 
 LOG = logging.getLogger("event_tracking_pipeline.collector")
 
@@ -98,7 +99,7 @@ class Collector:
         try:
             batch = json.loads(body, parse_constant=_reject_constant)
         except (ValueError, RecursionError) as exc:
-            dead = DeadLetter("invalid_json", str(exc)[:200], raw)
+            dead = DeadLetter("invalid_json", printable(str(exc), 200), raw)
             return self._write([], [dead], received_at, error="body is not valid JSON")
         problem = self._envelope_problem(batch)
         if problem:
@@ -121,7 +122,7 @@ class Collector:
             return "body must be a JSON object"
         unknown = set(batch) - {"events", "sent_at"}
         if unknown:
-            return f"unknown envelope fields: {', '.join(sorted(unknown))}"
+            return f"unknown envelope fields: {quote_list(unknown)}"
         events = batch.get("events")
         if not isinstance(events, list) or not events:
             return "events must be a non-empty array"

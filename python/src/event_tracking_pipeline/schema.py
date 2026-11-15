@@ -10,6 +10,8 @@ from typing import Any, cast
 
 from jsonschema import Draft202012Validator
 
+from .text import MAX_VALUE, printable
+
 SCHEMA_VERSION = 1
 MAX_PROBLEMS = 10
 MAX_MESSAGE = 200
@@ -41,7 +43,7 @@ def load_schema(version: int = SCHEMA_VERSION) -> dict[str, Any]:
 
 def _pointer(parts: Any) -> str:
     """JSON-pointer-like path of an error location."""
-    return "".join(f"/{p}" for p in parts)
+    return "".join(f"/{printable(str(p), MAX_VALUE)}" for p in parts)
 
 
 def _parse_utc(value: str) -> datetime | None:
@@ -75,7 +77,9 @@ class EventValidator:
         errors = sorted(
             self._validator.iter_errors(event), key=lambda e: [str(p) for p in e.absolute_path]
         )
-        found = [Problem(_pointer(e.absolute_path), e.message[:MAX_MESSAGE]) for e in errors]
+        found = [
+            Problem(_pointer(e.absolute_path), printable(e.message)[:MAX_MESSAGE]) for e in errors
+        ]
         if not found and isinstance(event, dict):
             if _parse_utc(event["timestamp"]) is None:
                 found.append(Problem("/timestamp", "not a calendar date and time"))
